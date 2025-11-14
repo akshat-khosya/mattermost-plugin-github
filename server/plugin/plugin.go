@@ -717,6 +717,10 @@ func (p *Plugin) disconnectGitHubAccount(userID string) {
 		p.client.Log.Warn("Failed to delete github token from KV store", "userID", userID, "error", err.Error())
 	}
 
+	if err := p.store.Delete(userID + "_github_status"); err != nil {
+		p.client.Log.Warn("Failed to delete github status from KV store", "userID", userID, "error", err.Error())
+	}
+
 	user, err := p.client.User.Get(userID)
 	if err != nil {
 		p.client.Log.Warn("Failed to get user props", "userID", userID, "error", err.Error())
@@ -1200,6 +1204,10 @@ func (p *Plugin) handleRevokedToken(info *GitHubUserInfo) {
 }
 
 func (p *Plugin) UserStatusHasChanged(c *plugin.Context, userStatus *model.Status) {
+	if !p.getConfiguration().EnableSyncStatus {
+		return
+	}
+
 	userInfo, apiErr := p.getGitHubUserInfo(userStatus.UserId)
 	if apiErr != nil {
 		return
@@ -1210,6 +1218,11 @@ func (p *Plugin) UserStatusHasChanged(c *plugin.Context, userStatus *model.Statu
 		message, emoji, busy, err := graphQLClient.GetUserStatus(context.Background(), userInfo.GitHubUsername)
 		if err != nil {
 			p.client.Log.Error("failed to get user status", "error", err)
+			return
+		}
+
+		if message == "Out of office" {
+			p.client.Log.Debug("github status already set to ooo")
 			return
 		}
 

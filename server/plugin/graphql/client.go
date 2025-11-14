@@ -77,8 +77,8 @@ type changeUserStatusMutation struct {
 func (c *Client) UpdateUserStatus(ctx context.Context, emoji, message string, busy bool) (string, error) {
 	var mutation changeUserStatusMutation
 	input := githubv4.ChangeUserStatusInput{
-		Emoji:   githubv4.NewString(githubv4.String(emoji)),
-		Message: githubv4.NewString(githubv4.String(message)),
+		Emoji:               githubv4.NewString(githubv4.String(emoji)),
+		Message:             githubv4.NewString(githubv4.String(message)),
 		LimitedAvailability: githubv4.NewBoolean(githubv4.Boolean(busy)),
 	}
 
